@@ -10,10 +10,10 @@ bool had_error = false;
 static void run(std::string source)
 {
     Lexer* lexer = new Lexer(source);
-    std::vector<Token*> tokens = lexer->scan_tokens();
+    auto tokens = lexer->scan_tokens();
 
-    for (auto token : tokens)
-        std::cout << "[" << token->get_type() << "]" << " token: " << token->get_lexeme() << "\n";
+    for (auto& token : tokens)
+        std::cout << "[" << token.get_type() << "]" << " token: " << token.get_lexeme() << "\n";
 }
 
 static void report(int line, std::string where, std::string message)

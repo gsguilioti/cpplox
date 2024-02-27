@@ -23,14 +23,14 @@ std::map<std::string, TokenType> Lexer::keywords =
     {"while",   WHILE},
 };
 
-std::vector<Token*> Lexer::scan_tokens()
+const std::vector<Token>& Lexer::scan_tokens()
 {
     while (!is_at_end()) {
       this->m_start = this->m_current;
       scan_token();
     }
 
-    this->m_tokens.push_back(new Token(END, "", "", this->m_line));
+    this->m_tokens.emplace_back(END, "", "", this->m_line);
     return this->m_tokens;
 }
 
@@ -99,10 +99,12 @@ void Lexer::add_token(TokenType type)
 { 
     this->add_token(type, ""); 
 }
-void Lexer::add_token(TokenType type, std::variant<std::string, double> literal)
+
+void Lexer::add_token(TokenType type, std::any literal)
 {
     std::string text = this->m_source.substr(this->m_start, this->m_current - this->m_start);
-    this->m_tokens.push_back(new Token(type, text, literal, this->m_line));
+
+    this->m_tokens.emplace_back(type, text, literal, this->m_line);
 }
 
 bool Lexer::match(char expected)

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <variant>
+#include <any>
 #include <map>
 
 enum TokenType {
@@ -32,11 +32,11 @@ class Token
 private:
     TokenType m_type;
     std::string m_lexeme;
-    std::variant<std::string, double> m_literal;
+    std::any m_literal;
     int m_line;
     
 public:
-    Token(TokenType type, std::string lexeme, std::variant<std::string, double> literal, int line)
+    Token(TokenType type, std::string lexeme, std::any literal, int line)
         : m_type{type}, m_lexeme{lexeme}, m_literal{literal}, m_line{line}
     {}
 
@@ -50,7 +50,7 @@ class Lexer
 {
 private:
     std::string m_source;
-    std::vector<Token*> m_tokens;
+    std::vector<Token> m_tokens;
     int m_start = 0;
     int m_current = 0;
     int m_line = 1;
@@ -58,7 +58,7 @@ private:
     bool is_at_end() { return m_current >= m_source.length(); };
     char advance();
     void add_token(TokenType type);
-    void add_token(TokenType type, std::variant<std::string, double> literal);
+    void add_token(TokenType type, std::any literal);
     void scan_token();
     bool match(char expected);
     char peek();
@@ -76,5 +76,5 @@ public:
     { }
     ~Lexer() = default;
 
-    std::vector<Token*> scan_tokens();
+    const std::vector<Token>& scan_tokens();
 };
