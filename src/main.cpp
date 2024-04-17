@@ -4,6 +4,8 @@
 #include <vector>
 
 #include "lex.h"
+#include "expr.h"
+#include "stmt.h"
 
 bool had_error = false;
 
