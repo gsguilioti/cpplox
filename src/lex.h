@@ -29,13 +29,12 @@ enum TokenType {
 
 class Token
 {
-private:
+public:
     TokenType m_type;
     std::string m_lexeme;
     std::any m_literal;
     int m_line;
     
-public:
     Token(TokenType type, std::string lexeme, std::any literal, int line)
         : m_type{type}, m_lexeme{lexeme}, m_literal{literal}, m_line{line}
     {}
@@ -44,6 +43,32 @@ public:
 
     int get_type(){ return m_type; };
     std::string get_lexeme(){ return m_lexeme; };
+
+    std::string toString() const {
+    std::string literal_text;
+
+    switch (m_type) {
+      case (IDENTIFIER):
+        literal_text = m_lexeme;
+        break;
+      case (STRING):
+        literal_text = std::any_cast<std::string>(m_literal);
+        break;
+      case (NUMBER):
+        literal_text = std::to_string(std::any_cast<double>(m_literal));
+        break;
+      case (TRUE):
+        literal_text = "true";
+        break;
+      case (FALSE):
+        literal_text = "false";
+        break;
+      default:
+        literal_text = "nil";
+    }
+
+    return std::to_string(m_type) + " " + m_lexeme + " " + literal_text;
+  }
 };
 
 class Lexer

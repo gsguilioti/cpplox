@@ -6,6 +6,7 @@
 #include "lex.h"
 #include "expr.h"
 #include "stmt.h"
+#include "ast_printer.h"
 
 bool had_error = false;
 
@@ -29,7 +30,7 @@ extern void error(int line, std::string message)
     report(line, "", message);
 }
 
-static std::string run_file(std::string filename)
+static void run_file(std::string filename)
 {
     std::ifstream file("../../example/" + filename);
     std::stringstream strStream;
