@@ -4,6 +4,7 @@ set(SOURCES
         main.cpp
         lex.cpp
         parser.cpp
+        interpreter.cpp
 )
     
-add_executable(yard ${SOURCES})
+add_executable(lox ${SOURCES})

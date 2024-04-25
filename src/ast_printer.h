@@ -29,7 +29,22 @@ public:
       } else if (value_type == typeid(std::string)) {
         return std::any_cast<std::string>(expr->m_value);
       } else if (value_type == typeid(double)) {
-        return std::to_string(std::any_cast<double>(expr->m_value));
+        std::string text;
+        text = std::to_string(std::any_cast<double>(expr->m_value));
+        size_t dotPos = text.find('.');
+        if (dotPos != std::string::npos) 
+        {
+            size_t lastNonZeroPos = text.size() - 1;
+            while (text[lastNonZeroPos] == '0' && lastNonZeroPos > dotPos)
+                lastNonZeroPos--;
+
+            if (text[lastNonZeroPos] == '.') 
+                text.erase(lastNonZeroPos, std::string::npos);
+            else
+                text.erase(lastNonZeroPos + 1, std::string::npos);
+        }
+
+        return text;
       } else if (value_type == typeid(bool)) {
         return std::any_cast<bool>(expr->m_value) ? "true" : "false";
       }

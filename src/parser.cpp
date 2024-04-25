@@ -45,10 +45,10 @@ Token Parser::previous()
     return m_tokens[current -1];
 }
 
-ParseError* Parser::error(Token token, std::string message)
+ParseError Parser::error(Token token, std::string message)
 {
     error(token, message);
-    return new ParseError();
+    return ParseError(message);
 }
 
 Token Parser::consume(TokenType type, std::string message)

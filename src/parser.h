@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <stdexcept>
 
 #include "lex.h"
 #include "expr.h"
@@ -24,7 +25,7 @@ private:
     Token previous();
     Token consume(TokenType type, std::string message);
     void synchronize();
-    ParseError* error(Token token, std::string message);
+    ParseError error(Token token, std::string message);
 
     std::shared_ptr<Expr> expression();
     std::shared_ptr<Expr> equality();
@@ -42,9 +43,8 @@ public:
     std::shared_ptr<Expr> parse();
 };
 
-class ParseError
+class ParseError : public std::runtime_error 
 {
 public:
-    ParseError() { }
-    ~ParseError() = default;
+    ParseError(const std::string& message) : std::runtime_error(message) {}
 };
