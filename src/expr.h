@@ -40,7 +40,7 @@ public:
     virtual std::any accept(VisitorExpr& visitor) = 0;
 };
 
-class Assign : Expr, public std::enable_shared_from_this<Assign> {
+class Assign : public Expr, public std::enable_shared_from_this<Assign> {
 public:
     const Token m_name;
     std::shared_ptr<Expr> m_value;
@@ -53,13 +53,13 @@ public:
     }
 };
 
-class Binary : Expr, public std::enable_shared_from_this<Binary> {
+class Binary : public Expr, public std::enable_shared_from_this<Binary> {
 public:
     std::shared_ptr<Expr> m_left;
     std::shared_ptr<Expr> m_right;
     const Token m_operator;
 
-    Binary(Token op, std::shared_ptr<Expr> left, std::shared_ptr<Expr> right) 
+    Binary(std::shared_ptr<Expr> left, Token op, std::shared_ptr<Expr> right) 
         : m_operator(op), m_left(std::move(left)), m_right(std::move(right)) {}
     
     virtual std::any accept(VisitorExpr& visitor) override {
@@ -67,7 +67,7 @@ public:
     }
 };
 
-class Call : Expr, public std::enable_shared_from_this<Call> {
+class Call : public Expr, public std::enable_shared_from_this<Call> {
 public:
     const Token m_paren;
     std::shared_ptr<Expr> m_calee;
@@ -81,7 +81,7 @@ public:
     }
 };
 
-class Get : Expr, public std::enable_shared_from_this<Get> {
+class Get : public Expr, public std::enable_shared_from_this<Get> {
 public:
     const Token m_name;
     std::shared_ptr<Expr> m_object;
@@ -94,7 +94,7 @@ public:
     }
 };
 
-class Grouping : Expr, public std::enable_shared_from_this<Grouping> {
+class Grouping : public Expr, public std::enable_shared_from_this<Grouping> {
 public:
     std::shared_ptr<Expr> m_expression;
 
@@ -106,7 +106,7 @@ public:
     }
 };
 
-class Literal : Expr, public std::enable_shared_from_this<Literal> {
+class Literal : public Expr, public std::enable_shared_from_this<Literal> {
 public:
     const std::any m_value;
 
@@ -118,7 +118,7 @@ public:
     }
 };
 
-class Logical : Expr, public std::enable_shared_from_this<Logical> {
+class Logical : public Expr, public std::enable_shared_from_this<Logical> {
 public:
     std::shared_ptr<Expr> m_left;
     std::shared_ptr<Expr> m_right;
@@ -132,7 +132,7 @@ public:
     }
 };
 
-class Set : Expr, public std::enable_shared_from_this<Set> {
+class Set : public Expr, public std::enable_shared_from_this<Set> {
 public:
     const Token m_name;
     std::shared_ptr<Expr> m_object;
@@ -146,7 +146,7 @@ public:
     }
 };
 
-class Super : Expr, public std::enable_shared_from_this<Super> {
+class Super : public Expr, public std::enable_shared_from_this<Super> {
 public:
     const Token m_keyword;
     const Token m_method;
@@ -159,7 +159,7 @@ public:
     }
 };
 
-class This : Expr, public std::enable_shared_from_this<This> {
+class This : public Expr, public std::enable_shared_from_this<This> {
 public:
     const Token m_keyword;
 
@@ -171,7 +171,7 @@ public:
     }
 };
 
-class Unary : Expr, public std::enable_shared_from_this<Unary> {
+class Unary : public Expr, public std::enable_shared_from_this<Unary> {
 public:
     const Token m_operator;
     std::shared_ptr<Expr> m_right;
@@ -184,7 +184,7 @@ public:
     }
 };
 
-class Variable : Expr, public std::enable_shared_from_this<Variable> {
+class Variable : public Expr, public std::enable_shared_from_this<Variable> {
 public:
     const Token m_name;
 

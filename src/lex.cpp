@@ -1,7 +1,7 @@
 #include "lex.h"
 #include <cctype>
 
-void error(int line, std::string message);
+void error(Token token, std::string message);
 
 std::map<std::string, TokenType> Lexer::keywords =
 {
@@ -85,7 +85,7 @@ void Lexer::scan_token()
             else if (isalpha(c))
                 identifier();
             else
-                error(this->m_line, "Unexpected character.");
+                error(this->m_tokens[m_current], "Unexpected character.");
         break;
     }
 }
@@ -132,7 +132,7 @@ void Lexer::string()
     }
 
     if (this->is_at_end()) {
-      error(this->m_line, "unterminated string.");
+      error(this->m_tokens[m_current], "unterminated string.");
       return;
     }
 
