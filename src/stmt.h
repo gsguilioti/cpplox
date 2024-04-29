@@ -2,6 +2,7 @@
 
 #include <any>
 #include <vector>
+#include <utility>
 #include "lex.h"
 #include "expr.h"
 
@@ -17,15 +18,15 @@ class While;
 
 class VisitorStmt {
 public:
-    virtual std::any visit_block(const Block& expr) = 0;
-    virtual std::any visit_class(const Class& expr) = 0;
-    virtual std::any visit_expression(const Expression& expr) = 0;
-    virtual std::any visit_function(const Function& expr) = 0;
-    virtual std::any visit_if(const If& expr) = 0;
-    virtual std::any visit_print(const Print& expr) = 0;
-    virtual std::any visit_return(const Return& expr) = 0;
-    virtual std::any visit_var(const Var& expr) = 0;
-    virtual std::any visit_while(const While& expr) = 0;
+    virtual std::any visit_block(std::shared_ptr<Block> stmt) = 0;
+    virtual std::any visit_class(std::shared_ptr<Class> stmt) = 0;
+    virtual std::any visit_expression(std::shared_ptr<Expression> stmt) = 0;
+    virtual std::any visit_function(std::shared_ptr<Function> stmt) = 0;
+    virtual std::any visit_if(std::shared_ptr<If> stmt) = 0;
+    virtual std::any visit_print(std::shared_ptr<Print> stmt) = 0;
+    virtual std::any visit_return(std::shared_ptr<Return> stmt) = 0;
+    virtual std::any visit_var(std::shared_ptr<Var> stmt) = 0;
+    virtual std::any visit_while(std::shared_ptr<While> stmt) = 0;
 };
 
 class Stmt {
@@ -33,119 +34,119 @@ public:
     virtual std::any accept(VisitorStmt& visitor) = 0;
 };
 
-class Block : public Stmt {
+class Block : public Stmt, public std::enable_shared_from_this<Block> {
 public:
-    const std::vector<Stmt*> m_statements;
+    std::vector<std::shared_ptr<Stmt>> m_statements;
 
-    Block(const std::vector<Stmt*>& statements) 
-        : m_statements(statements) {}
+    Block(const std::vector<std::shared_ptr<Stmt>>& statements) 
+        : m_statements(std::move(statements)) {}
 
     virtual std::any accept(VisitorStmt& visitor) override {
-        return visitor.visit_block(*this);
+        return visitor.visit_block(shared_from_this());
     }
 };
 
-class Class : public Stmt {
+class Class : public Stmt, public std::enable_shared_from_this<Class> {
 public:
     const Token m_name;
-    const Variable& m_superclass;
-    const std::vector<Function*> m_methods;
+    const std::shared_ptr<Variable> m_superclass;
+    const std::vector<std::shared_ptr<Function>> m_methods;
 
-    Class(Token name, Variable& superclass, const std::vector<Function*>& methods) 
-        : m_name(name), m_superclass(superclass), m_methods(methods) {}
+    Class(Token name, std::shared_ptr<Variable> superclass, const std::vector<std::shared_ptr<Function>>& methods) 
+        : m_name(std::move(name)), m_superclass(std::move(superclass)), m_methods(std::move(methods)) {}
 
     virtual std::any accept(VisitorStmt& visitor) override {
-        return visitor.visit_class(*this);
+        return visitor.visit_class(shared_from_this());
     }
 };
 
-class Expression : public Stmt {
+class Expression : public Stmt, public std::enable_shared_from_this<Expression> {
 public:
-    const Expr& m_expression;
+    const std::shared_ptr<Expr> m_expression;
 
-    Expression(Expr& expression) 
-        : m_expression(expression) {}
+    Expression(std::shared_ptr<Expr> expression) 
+        : m_expression(std::move(expression)) {}
 
     virtual std::any accept(VisitorStmt& visitor) override {
-        return visitor.visit_expression(*this);
+        return visitor.visit_expression(shared_from_this());
     }
 };
 
-class Function : public Stmt {
-public:
-    const Token m_name;
-    const std::vector<Token*> m_params;
-    const std::vector<Stmt*> m_body;
-
-    Function(Token name, const std::vector<Token*>& params, const std::vector<Stmt*>& body) 
-        : m_name(name), m_params(params), m_body(body) {}
-
-    virtual std::any accept(VisitorStmt& visitor) override {
-        return visitor.visit_function(*this);
-    }
-};
-
-class If : public Stmt {
-public:
-    const Expr& m_condition;
-    const Stmt& m_thenBranch;
-    const Stmt& m_elseBranch;
-
-    If(Expr& condition, Stmt& thenBranch, Stmt& elseBranch) 
-        : m_condition(condition), m_thenBranch(thenBranch), m_elseBranch(elseBranch) {}
-
-    virtual std::any accept(VisitorStmt& visitor) override {
-        return visitor.visit_if(*this);
-    }
-};
-
-class Print : public Stmt {
-public:
-    const Expr& m_expression;
-
-    Print(Expr& expression) 
-        : m_expression(expression) {}
-
-    virtual std::any accept(VisitorStmt& visitor) override {
-        return visitor.visit_print(*this);
-    }
-};
-
-class Return : public Stmt {
+class Function : public Stmt, public std::enable_shared_from_this<Function> {
 public:
     const Token m_name;
-    const Expr& m_value;
+    const std::vector<Token> m_params;
+    const std::vector<std::shared_ptr<Stmt>> m_body;
 
-    Return(Token name, Expr& value) 
-        : m_name(name), m_value(value) {}
+    Function(Token name, const std::vector<Token>& params, const std::vector<std::shared_ptr<Stmt>>& body) 
+        : m_name(std::move(name)), m_params(std::move(params)), m_body(std::move(body)) {}
 
     virtual std::any accept(VisitorStmt& visitor) override {
-        return visitor.visit_return(*this);
+        return visitor.visit_function(shared_from_this());
     }
 };
 
-class Var : public Stmt {
+class If : public Stmt, public std::enable_shared_from_this<If> {
+public:
+    const std::shared_ptr<Expr> m_condition;
+    const std::shared_ptr<Stmt> m_thenBranch;
+    const std::shared_ptr<Stmt> m_elseBranch;
+
+    If(std::shared_ptr<Expr> condition, std::shared_ptr<Stmt> thenBranch, std::shared_ptr<Stmt> elseBranch) 
+        : m_condition(std::move(condition)), m_thenBranch(std::move(thenBranch)), m_elseBranch(std::move(elseBranch)) {}
+
+    virtual std::any accept(VisitorStmt& visitor) override {
+        return visitor.visit_if(shared_from_this());
+    }
+};
+
+class Print : public Stmt, public std::enable_shared_from_this<Print> {
+public:
+    const std::shared_ptr<Expr> m_expression;
+
+    Print(std::shared_ptr<Expr> expression) 
+        : m_expression(std::move(expression)) {}
+
+    virtual std::any accept(VisitorStmt& visitor) override {
+        return visitor.visit_print(shared_from_this());
+    }
+};
+
+class Return : public Stmt, public std::enable_shared_from_this<Return> {
 public:
     const Token m_name;
-    const Expr& m_initializer;
+    const std::shared_ptr<Expr> m_value;
 
-    Var(Token name, Expr& initializer) 
-        : m_name(name), m_initializer(initializer) {}
+    Return(Token name, std::shared_ptr<Expr> value) 
+        : m_name(std::move(name)), m_value(std::move(value)) {}
 
     virtual std::any accept(VisitorStmt& visitor) override {
-        return visitor.visit_var(*this);
+        return visitor.visit_return(shared_from_this());
     }
 };
 
-class While : public Stmt {
+class Var : public Stmt, public std::enable_shared_from_this<Var> {
 public:
-    const Expr& m_condition;
-    const Stmt& m_body;
+    const Token m_name;
+    const std::shared_ptr<Expr> m_initializer;
 
-    While(Expr& condition, Stmt& body) 
-        : m_condition(condition), m_body(body) {}
+    Var(Token name, std::shared_ptr<Expr> initializer) 
+        : m_name(std::move(name)), m_initializer(std::move(initializer)) {}
 
     virtual std::any accept(VisitorStmt& visitor) override {
-        return visitor.visit_while(*this);
+        return visitor.visit_var(shared_from_this());
+    }
+};
+
+class While : public Stmt, public std::enable_shared_from_this<While> {
+public:
+    const std::shared_ptr<Expr> m_condition;
+    const std::shared_ptr<Stmt> m_body;
+
+    While(std::shared_ptr<Expr> condition, std::shared_ptr<Stmt> body) 
+        : m_condition(std::move(condition)), m_body(std::move(body)) {}
+
+    virtual std::any accept(VisitorStmt& visitor) override {
+        return visitor.visit_while(shared_from_this());
     }
 };
