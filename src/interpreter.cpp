@@ -3,6 +3,7 @@
 
 #include "interpreter.h"
 #include "runtime_error.h"
+#include "environment.h"
 
 void runtime_error(RuntimeError error);
 
@@ -88,6 +89,11 @@ std::any Interpreter::visit_unary(std::shared_ptr<Unary> expr)
     return std::any();
 }
 
+std::any Interpreter::visit_variable(std::shared_ptr<Variable> expr)
+{
+    return m_environment->get(expr->m_name);
+}
+
 std::any Interpreter::visit_binary(std::shared_ptr<Binary> expr)
 {
     std::any right = evaluate(expr->m_right);
@@ -136,16 +142,72 @@ std::any Interpreter::visit_binary(std::shared_ptr<Binary> expr)
     return std::any();
 }
 
-void Interpreter::interpret(std::shared_ptr<Expr> expression)
+std::any Interpreter::visit_expression(std::shared_ptr<Expression> stmt)
+{
+    evaluate(stmt->m_expression);
+
+    return std::any();
+}
+
+std::any Interpreter::visit_print(std::shared_ptr<Print> stmt)
+{
+    std::any value = evaluate(stmt->m_expression);
+    std::cout << stringify(value) << "\n";
+    
+    return std::any();
+}
+
+std::any Interpreter::visit_var(std::shared_ptr<Var> stmt)
+{
+    std::any value;
+    if(stmt->m_initializer != nullptr)
+        value = evaluate(stmt->m_initializer);
+
+    m_environment->define(stmt->m_name.m_lexeme, std::move(value));
+    return std::any();
+}
+
+std::any Interpreter::visit_assign(std::shared_ptr<Assign> expr)
+{
+    std::any value = evaluate(expr->m_value);
+    m_environment->assign(expr->m_name, value);
+    return value;
+}
+
+std::any Interpreter::visit_block(std::shared_ptr<Block> stmt)
+{
+    execute_block(stmt->m_statements, std::make_shared<Environment>(m_environment));
+    return std::any();
+}
+
+void Interpreter::execute_block(const std::vector<std::shared_ptr<Stmt>>& statements, std::shared_ptr<Environment> environment)
+{
+    std::shared_ptr<Environment> previous = m_environment;
+    try
+    {
+        m_environment = environment;
+
+        for(const std::shared_ptr<Stmt>& statement : statements)
+            execute(statement);
+    }
+    catch(...)
+    {
+        m_environment = previous;
+        throw;
+    }
+
+    m_environment = previous;
+}
+
+void Interpreter::interpret(const std::vector<std::shared_ptr<Stmt>>& statements)
 {
     try
     {
-        std::any value = evaluate(expression);
-        std::cout << stringify(value);
+        for(const std::shared_ptr<Stmt>& statement : statements)
+            execute(statement);
     }
     catch(RuntimeError error)
     {
         runtime_error(error);
     }
-    
 }

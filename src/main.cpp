@@ -11,29 +11,28 @@
 #include "runtime_error.h"
 #include "interpreter.h"
 
-static Interpreter* interpreter = new Interpreter();
+static Interpreter interpreter{};
 
 bool had_error = false;
 bool had_runtime_error = false;
 
 static void run(std::string source)
 {
-    Lexer* lexer = new Lexer(source);
-    auto tokens = lexer->scan_tokens();
-    Parser* parser = new Parser(tokens);
-    std::shared_ptr<Expr> expression = parser->parse();
-
+    Lexer lexer{source};
+    auto tokens = lexer.scan_tokens();
+    Parser parser{tokens};
+    std::vector<std::shared_ptr<Stmt>> statements = parser.parse();
     if (had_error) return;
 
-    std::cout << "\ntokens:\n";
+    /*std::cout << "\ntokens:\n";
     for (auto& token : tokens)
-        std::cout << "[" << token.get_type() << "]" << " token: " << token.get_lexeme() << "\n";
+        std::cout << "[" << token.get_type() << "]" << " token: " << token.get_lexeme() << "\n";*/
 
-    std::cout << "\nparse:\n";
-    std::cout << AstPrinter{}.print(expression) << "\n";
+    /*std::cout << "\nparse:\n";
+    std::cout << AstPrinter{}.print(expression) << "\n";*/
 
     std::cout << "\ninterpret:\n";
-    interpreter->interpret(expression);
+    interpreter.interpret(statements);
     std::cout << "\n";
 }
 
@@ -72,9 +71,7 @@ static void run_file(std::string filename)
 int main(int argc, char *argv[])
 {
     if (argc >= 2)
-    {
         run_file(argv[1]);
-    }
 
     return 0;
 }

@@ -138,7 +138,7 @@ void Lexer::string()
 
     this->advance();
 
-    std::string value = this->m_source.substr(this->m_start + 1, this->m_current - this->m_start -1);
+    std::string value = this->m_source.substr(this->m_start + 1, this->m_current - this->m_start -2);
     this->add_token(STRING, value);
 }
 

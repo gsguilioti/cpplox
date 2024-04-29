@@ -6,6 +6,7 @@
 
 #include "lex.h"
 #include "expr.h"
+#include "stmt.h"
 
 class ParseError;
 
@@ -27,7 +28,14 @@ private:
     void synchronize();
     ParseError error(Token token, std::string message);
 
+    std::shared_ptr<Stmt> statement();
+    std::shared_ptr<Stmt> print_statement();
+    std::shared_ptr<Stmt> var_declaration();
+    std::shared_ptr<Stmt> expression_statement();
+    std::vector<std::shared_ptr<Stmt>> block();
+    std::shared_ptr<Expr> assignment();
     std::shared_ptr<Expr> expression();
+    std::shared_ptr<Stmt> declaration();
     std::shared_ptr<Expr> equality();
     std::shared_ptr<Expr> comparison();
     std::shared_ptr<Expr> term();
@@ -36,11 +44,10 @@ private:
     std::shared_ptr<Expr> primary();
 public:
     Parser(const std::vector<Token>& tokens)
-        : m_tokens{tokens}
-    { }
+        : m_tokens{tokens} { }
     ~Parser() = default;
 
-    std::shared_ptr<Expr> parse();
+    std::vector<std::shared_ptr<Stmt>> parse();
 };
 
 class ParseError : public std::runtime_error 
