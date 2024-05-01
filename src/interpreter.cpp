@@ -9,9 +9,10 @@ void runtime_error(RuntimeError error);
 
 bool Interpreter::is_truthy(std::any object)
 {
-    if(object.has_value()) return false;
-    if(object.type() == typeid(bool)) return std::any_cast<bool>(object);
-
+    if (object.type() == typeid(nullptr)) return false;
+    if (object.type() == typeid(bool)) {
+      return std::any_cast<bool>(object);
+    }
     return true;
 }
 
@@ -71,6 +72,22 @@ std::string Interpreter::stringify(std::any object)
     }
 
     return text;
+}
+
+std::any Interpreter::visit_logical(std::shared_ptr<Logical> expr)
+{
+    std::any left = evaluate(expr->m_left);
+
+    if(expr->m_operator.m_type == TokenType::OR)
+    {
+        if(is_truthy(left)) return left;
+    }
+    else
+    {
+        if(!is_truthy(left)) return left;
+    }
+
+    return evaluate(expr->m_right);
 }
 
 std::any Interpreter::visit_unary(std::shared_ptr<Unary> expr)
@@ -149,6 +166,16 @@ std::any Interpreter::visit_expression(std::shared_ptr<Expression> stmt)
     return std::any();
 }
 
+std::any Interpreter::visit_if(std::shared_ptr<If> stmt)
+{
+    if(is_truthy(evaluate(stmt->m_condition)))
+        execute(stmt->m_thenBranch);
+    else if(stmt->m_elseBranch != nullptr)
+        execute(stmt->m_elseBranch);
+
+    return std::any();
+}
+
 std::any Interpreter::visit_print(std::shared_ptr<Print> stmt)
 {
     std::any value = evaluate(stmt->m_expression);
@@ -164,6 +191,14 @@ std::any Interpreter::visit_var(std::shared_ptr<Var> stmt)
         value = evaluate(stmt->m_initializer);
 
     m_environment->define(stmt->m_name.m_lexeme, std::move(value));
+    return std::any();
+}
+
+std::any Interpreter::visit_while(std::shared_ptr<While> stmt)
+{
+    while(is_truthy(evaluate(stmt->m_condition)))
+        execute(stmt->m_body);
+
     return std::any();
 }
 

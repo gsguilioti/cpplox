@@ -124,8 +124,8 @@ public:
     std::shared_ptr<Expr> m_right;
     const Token m_operator;
 
-    Logical(Token op, std::shared_ptr<Expr> left, std::shared_ptr<Expr> right) 
-        : m_operator(std::move(op)), m_left(std::move(left)), m_right(std::move(right)) {}
+    Logical(std::shared_ptr<Expr> left, Token op, std::shared_ptr<Expr> right) 
+        : m_left(std::move(left)), m_operator(std::move(op)), m_right(std::move(right)) {}
     
     virtual std::any accept(VisitorExpr& visitor) override {
         return visitor.visit_logical(shared_from_this());

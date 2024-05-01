@@ -97,10 +97,86 @@ std::vector<std::shared_ptr<Stmt>> Parser::parse()
 
 std::shared_ptr<Stmt> Parser::statement()
 {
+    if(match(FOR)) return for_statement();
+    if(match(IF)) return if_statement();
     if(match(PRINT)) return print_statement();
+    if(match(WHILE)) return while_statement();
     if(match(LEFT_BRACE)) return std::make_shared<Block>(block());
 
     return expression_statement();
+}
+
+std::shared_ptr<Stmt> Parser::for_statement()
+{
+    consume(LEFT_PAREN, "Expect '(' after 'for'.");
+
+    std::shared_ptr<Stmt> initializer;
+    if (match(SEMICOLON))
+      initializer = nullptr;
+    else if (match(VAR))
+      initializer = var_declaration();
+    else 
+      initializer = expression_statement();
+
+    std::shared_ptr<Expr> condition = nullptr;
+    if(!check(SEMICOLON))
+        condition = expression();
+
+    consume(SEMICOLON, "Expect ';' after loop condition.");
+
+    std::shared_ptr<Expr> increment = nullptr;
+    if (!check(RIGHT_PAREN)) 
+      increment = expression();
+
+    consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    std::shared_ptr<Stmt> body = statement();
+
+    if (increment != nullptr) 
+    {
+      body = std::make_shared<Block>(
+          std::vector<std::shared_ptr<Stmt>>{
+              body,
+              std::make_shared<Expression>(increment)});
+    }
+    
+    if (condition == nullptr)
+      condition = std::make_shared<Literal>(true);
+
+    body = std::make_shared<While>(condition, body);
+
+    if (initializer != nullptr)
+    {
+      body = std::make_shared<Block>(
+          std::vector<std::shared_ptr<Stmt>>{initializer, body});
+    }
+
+    return body;
+}
+
+std::shared_ptr<Stmt> Parser::if_statement()
+{
+    consume(LEFT_PAREN, "Expect '(' after 'if'.");
+    std::shared_ptr<Expr> condition = expression();
+    consume(RIGHT_PAREN, "Expect ')' after if condition."); 
+
+    std::shared_ptr<Stmt> thenBranch = statement();
+    std::shared_ptr<Stmt> elseBranch = nullptr;
+    if(match(ELSE))
+        elseBranch = statement();
+
+    return std::make_shared<If>(condition, thenBranch, elseBranch);
+}
+
+std::shared_ptr<Stmt> Parser::while_statement()
+{
+    consume(LEFT_PAREN, "Expect '(' after 'while'.");
+    std::shared_ptr<Expr> condition = expression();
+    consume(RIGHT_PAREN, "Expect ')' after condition.");
+
+    std::shared_ptr<Stmt> body = statement();
+
+    return std::make_shared<While>(condition, body);
 }
 
 std::shared_ptr<Stmt> Parser::print_statement()
@@ -146,7 +222,7 @@ std::vector<std::shared_ptr<Stmt>> Parser::block()
 
 std::shared_ptr<Expr> Parser::assignment()
 {  
-    std::shared_ptr<Expr> expr = equality();
+    std::shared_ptr<Expr> expr = Or();
 
     if(match(EQUAL))
     {
@@ -162,6 +238,32 @@ std::shared_ptr<Expr> Parser::assignment()
         error(equals, "Invalid assignment target.");
     }
 
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::Or()
+{
+    std::shared_ptr<Expr> expr = And();
+    while(match(OR))
+    {
+        Token op = previous();
+        std::shared_ptr<Expr> right = And();
+        expr = std::make_shared<Logical>(expr, op, right);
+    }
+    
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::And()
+{
+    std::shared_ptr<Expr> expr = equality();
+    while(match(AND))
+    {
+        Token op = previous();
+        std::shared_ptr<Expr> right = equality();
+        expr = std::make_shared<Logical>(expr, op, right);
+    }
+    
     return expr;
 }
 

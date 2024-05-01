@@ -20,7 +20,7 @@ public:
     std::any visit_assign(std::shared_ptr<Assign> expr) override;
     std::any visit_call(std::shared_ptr<Call> expr) override {};
     std::any visit_get(std::shared_ptr<Get> expr) override {};
-    std::any visit_logical(std::shared_ptr<Logical> expr) override {};
+    std::any visit_logical(std::shared_ptr<Logical> expr) override;
     std::any visit_set(std::shared_ptr<Set> expr) override {};
     std::any visit_super(std::shared_ptr<Super> expr) override {};
     std::any visit_this(std::shared_ptr<This> expr) override {};
@@ -30,11 +30,11 @@ public:
     std::any visit_class(std::shared_ptr<Class> stmt) override {};
     std::any visit_expression(std::shared_ptr<Expression> stmt) override;
     std::any visit_function(std::shared_ptr<Function> stmt) override {};
-    std::any visit_if(std::shared_ptr<If> stmt) override {};
+    std::any visit_if(std::shared_ptr<If> stmt) override;
     std::any visit_print(std::shared_ptr<Print> stmt) override;
     std::any visit_return(std::shared_ptr<Return> stmt) override {};
     std::any visit_var(std::shared_ptr<Var> stmt) override;
-    std::any visit_while(std::shared_ptr<While> stmt) override {};
+    std::any visit_while(std::shared_ptr<While> stmt) override;
 
     void interpret(const std::vector<std::shared_ptr<Stmt>>& statements);
 
