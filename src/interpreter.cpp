@@ -4,6 +4,9 @@
 #include "interpreter.h"
 #include "runtime_error.h"
 #include "environment.h"
+#include "lox_callable.h"
+#include "lox_function.h"
+#include "lox_return.h"
 
 void runtime_error(RuntimeError error);
 
@@ -69,6 +72,15 @@ std::string Interpreter::stringify(std::any object)
     } else if (object.type() == typeid(std::string))
     {
         text = std::any_cast<std::string>(object);
+    }
+    else if (object.type() == typeid(bool)) 
+    {
+      return std::any_cast<bool>(object) ? "true" : "false";
+    }
+    else if (object.type() == typeid(std::shared_ptr<LoxFunction>)) 
+    {
+      return std::any_cast<
+          std::shared_ptr<LoxFunction>>(object)->to_string();
     }
 
     return text;
@@ -159,9 +171,44 @@ std::any Interpreter::visit_binary(std::shared_ptr<Binary> expr)
     return std::any();
 }
 
+std::any Interpreter::visit_call(std::shared_ptr<Call> expr)
+{
+    std::any callee = evaluate(expr->m_calee);
+
+    std::vector<std::any> arguments;
+    for (const std::shared_ptr<Expr>& argument : expr->m_arguments) 
+    {
+      arguments.push_back(evaluate(argument));
+    }
+
+    std::shared_ptr<LoxCallable> function;
+
+    if (callee.type() == typeid(std::shared_ptr<LoxFunction>)) 
+      function = std::any_cast<std::shared_ptr<LoxFunction>>(callee);
+    else 
+      throw RuntimeError{expr->m_paren, "Can only call functions and classes."};
+
+    if (arguments.size() != function->arity()) 
+    {
+      throw RuntimeError{expr->m_paren, "Expected " +
+          std::to_string(function->arity()) + " arguments but got " +
+          std::to_string(arguments.size()) + "."};
+    }
+
+    return function->call(*this, std::move(arguments));
+}
+
 std::any Interpreter::visit_expression(std::shared_ptr<Expression> stmt)
 {
     evaluate(stmt->m_expression);
+
+    return std::any();
+}
+
+std::any Interpreter::visit_function(std::shared_ptr<Function> stmt)
+{
+    auto function = std::make_shared<LoxFunction>(stmt, m_environment);
+    m_environment->define(stmt->m_name.m_lexeme, function);
 
     return std::any();
 }
@@ -182,6 +229,15 @@ std::any Interpreter::visit_print(std::shared_ptr<Print> stmt)
     std::cout << stringify(value) << "\n";
     
     return std::any();
+}
+
+std::any Interpreter::visit_return(std::shared_ptr<Return> stmt) 
+{
+    std::any value = nullptr;
+    if (stmt->m_value != nullptr) 
+        value = evaluate(stmt->m_value);
+
+    throw LoxReturn{value};
 }
 
 std::any Interpreter::visit_var(std::shared_ptr<Var> stmt)

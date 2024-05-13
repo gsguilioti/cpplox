@@ -100,6 +100,7 @@ std::shared_ptr<Stmt> Parser::statement()
     if(match(FOR)) return for_statement();
     if(match(IF)) return if_statement();
     if(match(PRINT)) return print_statement();
+    if (match(RETURN)) return return_statement();
     if(match(WHILE)) return while_statement();
     if(match(LEFT_BRACE)) return std::make_shared<Block>(block());
 
@@ -188,6 +189,17 @@ std::shared_ptr<Stmt> Parser::print_statement()
     return std::make_shared<Print>(value);
 }
 
+std::shared_ptr<Stmt> Parser::return_statement() {
+    Token keyword = previous();
+    std::shared_ptr<Expr> value = nullptr;
+    if (!check(SEMICOLON)) {
+      value = expression();
+    }
+
+    consume(SEMICOLON, "Expect ';' after return value.");
+    return std::make_shared<Return>(keyword, value);
+  }
+
 std::shared_ptr<Stmt> Parser::var_declaration()
 {
     Token name = consume(IDENTIFIER, "Expect variable name.");
@@ -207,6 +219,28 @@ std::shared_ptr<Stmt> Parser::expression_statement()
     consume(SEMICOLON, "Expect ';' after value.");
     
     return std::make_shared<Expression>(value);
+}
+
+std::shared_ptr<Function> Parser::function(std::string kind)
+{
+    Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
+    consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
+    std::vector<Token> parameters;
+    if (!check(RIGHT_PAREN)) {
+      do {
+        if (parameters.size() >= 255) {
+          error(peek(), "Can't have more than 255 parameters.");
+        }
+
+        parameters.emplace_back(
+            consume(IDENTIFIER, "Expect parameter name."));
+      } while (match(COMMA));
+    }
+    consume(RIGHT_PAREN, "Expect ')' after parameters.");
+    consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
+    std::vector<std::shared_ptr<Stmt>> body = block();
+
+    return std::make_shared<Function>(name, parameters, body);
 }
 
 std::vector<std::shared_ptr<Stmt>> Parser::block()
@@ -276,6 +310,7 @@ std::shared_ptr<Stmt> Parser::declaration()
 {
     try
     {
+        if(match(FUN)) return function("function");
         if(match(VAR)) return var_declaration();
 
         return statement();
@@ -353,7 +388,41 @@ std::shared_ptr<Expr> Parser::unary()
         return std::make_shared<Unary>(op, right);
     }
 
-    return primary();
+    return call();
+}
+
+std::shared_ptr<Expr> Parser::finish_call(std::shared_ptr<Expr> callee)
+{
+    std::vector<std::shared_ptr<Expr>> arguments;
+    if(!check(RIGHT_PAREN))
+    {
+        do
+        {
+            if(arguments.size() >= 255)
+                error(peek(), "Can't have more than 255 arguments.");
+
+            arguments.emplace_back(expression());
+        } while(match(COMMA));
+    }
+
+    Token paren = consume(RIGHT_PAREN, "Expect ')' after arguments.");
+
+    return std::make_shared<Call>(callee, paren, arguments);
+}
+
+std::shared_ptr<Expr> Parser::call()
+{
+    std::shared_ptr<Expr> expr = primary();
+
+    while(true)
+    {
+        if(match(LEFT_PAREN))
+            expr = finish_call(expr);
+        else
+            break;
+    }
+
+    return expr;
 }
 
 std::shared_ptr<Expr> Parser::primary()

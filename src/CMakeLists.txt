@@ -5,6 +5,7 @@ set(SOURCES
         lex.cpp
         parser.cpp
         interpreter.cpp
+        lox_function.cpp
 )
     
 add_executable(lox ${SOURCES})
